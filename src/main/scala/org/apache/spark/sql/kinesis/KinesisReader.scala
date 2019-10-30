@@ -63,10 +63,10 @@ private[kinesis] case class KinesisReader(
   val execContext = ExecutionContext.fromExecutorService(kinesisReaderThread)
 
   private val maxOffsetFetchAttempts =
-    readerOptions.getOrElse("client.numRetries".toLowerCase(Locale.ROOT), "3").toInt
+    readerOptions.getOrElse("client.numRetries".toLowerCase(Locale.ROOT), "20").toInt
 
   private val offsetFetchAttemptIntervalMs =
-    readerOptions.getOrElse("client.retryIntervalMs".toLowerCase(Locale.ROOT), "1000").toLong
+    readerOptions.getOrElse("client.retryIntervalMs".toLowerCase(Locale.ROOT), "10000").toLong
 
   private val maxSupportedShardsPerStream = 100
 
