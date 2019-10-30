@@ -63,17 +63,17 @@ class HDFSMetadataCommitter[T <: AnyRef : ClassTag](path: String,
   }
 
   private val numRetries: Int = {
-    options.getOrElse("executor.metadata.hdfs.numretries", "3").toInt
+    options.getOrElse("executor.metadata.hdfs.numretries", "20").toInt
   }
 
   private val retryIntervalMs: Long = {
     options.getOrElse("executor.metadata.hdfs.retryIntervalMs".toLowerCase(Locale.ROOT),
-      "1000").toLong
+      "10000").toLong
   }
 
   private val maxRetryIntervalMs: Long = {
     options.getOrElse("executor.metadata.hdfs.maxRetryIntervalMs".toLowerCase(Locale.ROOT),
-      "10000").toLong
+      "100000").toLong
   }
 
 
