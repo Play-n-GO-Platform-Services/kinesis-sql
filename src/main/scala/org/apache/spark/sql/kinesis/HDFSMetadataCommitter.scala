@@ -86,13 +86,7 @@ class HDFSMetadataCommitter[T <: AnyRef : ClassTag](path: String,
   }
 
   protected def batchIdToPath(batchId: Long): Path = {
-    val path = new Path(metadataPath, batchId.toString)
-    val fileContext = FileContext.getFileContext(
-      path.toUri, hadoopConf.value.asInstanceOf[ Configuration ])
-    if ( !fileContext.util().exists(path) ) {
-      fileContext.mkdir(path, FsPermission.getDirDefault, true)
-    }
-    path
+    new Path(metadataPath, batchId.toString)
   }
 
   protected def pathToBatchId(path: Path) = {
