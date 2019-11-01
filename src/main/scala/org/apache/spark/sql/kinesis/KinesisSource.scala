@@ -209,29 +209,6 @@ private[kinesis] class KinesisSource(
     }
     logInfo(s"Processing ${shardInfos.length} shards from ${shardInfos}")
 
-    // Create an RDD that reads from Kinesis
-    val kinesisSourceRDD = new KinesisSourceRDD(
-      sc,
-      sourceOptions,
-      streamName,
-      currBatchId,
-      shardInfos,
-      kinesisCredsProvider,
-      endPointURL,
-      hadoopConf(sqlContext),
-      metadataPath)
-
-    val rdd = kinesisSourceRDD.map { r: Record =>
-      InternalRow(
-        r.getData.array(),
-        UTF8String.fromString(streamName),
-        UTF8String.fromString(r.getPartitionKey),
-        UTF8String.fromString(r.getSequenceNumber),
-        DateTimeUtils.fromJavaTimestamp(
-          new java.sql.Timestamp(r.getApproximateArrivalTimestamp.getTime))
-      )
-    }
-
     // On recovery, getBatch will get called before getOffset
     if (currentShardOffsets.isEmpty) {
       currentShardOffsets = Some(currBatchShardOffset)
@@ -240,7 +217,25 @@ private[kinesis] class KinesisSource(
     logInfo("GetBatch generating RDD of offset range: " +
       shardInfos.mkString(", "))
 
-    sqlContext.internalCreateDataFrame(rdd, schema, isStreaming = true)
+    sqlContext.internalCreateDataFrame(new KinesisSourceRDD(
+      sc,
+      sourceOptions,
+      streamName,
+      currBatchId,
+      shardInfos,
+      kinesisCredsProvider,
+      endPointURL,
+      hadoopConf(sqlContext),
+      metadataPath).map { r: Record =>
+      InternalRow(
+        r.getData.array(),
+        UTF8String.fromString(streamName),
+        UTF8String.fromString(r.getPartitionKey),
+        UTF8String.fromString(r.getSequenceNumber),
+        DateTimeUtils.fromJavaTimestamp(
+          new java.sql.Timestamp(r.getApproximateArrivalTimestamp.getTime))
+      )
+    }, schema, isStreaming = true)
 
   }
 
