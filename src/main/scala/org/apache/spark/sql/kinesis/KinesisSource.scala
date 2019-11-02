@@ -209,15 +209,8 @@ private[kinesis] class KinesisSource(
     }
     logInfo(s"Processing ${shardInfos.length} shards from ${shardInfos}")
 
-    // On recovery, getBatch will get called before getOffset
-    if (currentShardOffsets.isEmpty) {
-      currentShardOffsets = Some(currBatchShardOffset)
-    }
-
-    logInfo("GetBatch generating RDD of offset range: " +
-      shardInfos.mkString(", "))
-
-    sqlContext.internalCreateDataFrame(new KinesisSourceRDD(
+    // Create an RDD that reads from Kinesis
+    val kinesisSourceRDD = new KinesisSourceRDD(
       sc,
       sourceOptions,
       streamName,
@@ -226,7 +219,9 @@ private[kinesis] class KinesisSource(
       kinesisCredsProvider,
       endPointURL,
       hadoopConf(sqlContext),
-      metadataPath).map { r: Record =>
+      metadataPath)
+
+    val rdd = kinesisSourceRDD.map { r: Record =>
       InternalRow(
         r.getData.array(),
         UTF8String.fromString(streamName),
@@ -235,7 +230,17 @@ private[kinesis] class KinesisSource(
         DateTimeUtils.fromJavaTimestamp(
           new java.sql.Timestamp(r.getApproximateArrivalTimestamp.getTime))
       )
-    }, schema, isStreaming = true)
+    }
+
+    // On recovery, getBatch will get called before getOffset
+    if (currentShardOffsets.isEmpty) {
+      currentShardOffsets = Some(currBatchShardOffset)
+    }
+
+    logInfo("GetBatch generating RDD of offset range: " +
+      shardInfos.mkString(", "))
+
+    sqlContext.internalCreateDataFrame(rdd, schema, isStreaming = true)
 
   }
 
