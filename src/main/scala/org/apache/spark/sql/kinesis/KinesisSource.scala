@@ -190,6 +190,8 @@ private[kinesis] class KinesisSource(
     }
   }
 
+
+
   override def getBatch(start: Option[Offset], end: Offset): DataFrame = {
     logInfo(s"End Offset is ${end.toString}")
     val currBatchShardOffset = KinesisSourceOffset.getShardOffsets(end)
@@ -221,6 +223,10 @@ private[kinesis] class KinesisSource(
       hadoopConf(sqlContext),
       metadataPath)
 
+    // scalastyle:off println
+    kinesisSourceRDD.collect().foreach(println)
+    // scalastyle:on println
+
     val rdd = kinesisSourceRDD.map { r: Record =>
       InternalRow(
         r.getData.array(),
@@ -232,6 +238,10 @@ private[kinesis] class KinesisSource(
       )
     }
 
+    // scalastyle:off println
+    rdd.collect().foreach(println)
+    // scalastyle:on println
+
     // On recovery, getBatch will get called before getOffset
     if (currentShardOffsets.isEmpty) {
       currentShardOffsets = Some(currBatchShardOffset)
@@ -239,6 +249,8 @@ private[kinesis] class KinesisSource(
 
     logInfo("GetBatch generating RDD of offset range: " +
       shardInfos.mkString(", "))
+
+    sqlContext.internalCreateDataFrame(rdd, schema, isStreaming = true).show(false)
 
     sqlContext.internalCreateDataFrame(rdd, schema, isStreaming = true)
 
