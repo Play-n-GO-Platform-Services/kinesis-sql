@@ -171,9 +171,6 @@ private[kinesis] class KinesisSourceProvider extends DataSourceRegister
       .getOrElse(DEFAULT_KINESIS_ENDPOINT_URL)
 
     val initialPosition: KinesisPosition = getKinesisPosition(caseInsensitiveParams)
-    println(awsAccessKeyId)
-    println(awsSecretKey)
-    
     val kinesisCredsProvider = if (awsAccessKeyId.length > 0) {
       BasicCredentials(awsAccessKeyId, awsSecretKey)
     } else if (awsStsRoleArn.length > 0) {
